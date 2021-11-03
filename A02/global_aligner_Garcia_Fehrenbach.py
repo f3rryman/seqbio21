@@ -8,7 +8,7 @@ import time
 
 
 """Handling command line arguments"""
-parser = argparse.ArgumentParser(description="Aligns two sequences from fasta file with Needleman-Wunsch")
+parser = argparse.ArgumentParser(description="Aligns two sequences from fasta file with Needleman-Wunsch variations.")
 parser.add_argument("Path",
                     metavar="path",
                     type=str,
@@ -44,32 +44,32 @@ if stat:
         start_time = time.time()
         sltn = nw.nw_basic(x, y)
         current, peak = tracemalloc.get_traced_memory()
-        print("A possible optimal global alignment of {} vs. {} is:\n{}\n{}"
+        print("The optimal global alignment of {} vs. {} is:\n{}\n{}"
               .format(data[0][0], data[1][0], sltn[0], sltn[1]))
         print("With a score of {}.".format(sltn[2]))
-        print("The algorithm needed {}s to align both sequences.".format(time.time()-start_time))
+        print("The algorithm needed {} s to align both sequences.".format(time.time()-start_time))
         print("Memory usage: current = {} bytes, peak = {} bytes".format(current, peak))
         tracemalloc.reset_peak()
 
     elif mode == 1:
         tracemalloc.start()
         start_time = time.time()
-        sltn = nw.nw_hirschberg(x, y)
+        sltn = nw.nw_linear_space(x,y)#nw.nw_hirschberg(x, y)
         current, peak = tracemalloc.get_traced_memory()
-        print("A possible optimal global alignment using the Hirschberg algorithm is:\n{]\n{}".format(sltn[0], sltn[1]))
+        print("The optimal global alignment using the Hirschberg algorithm is:\n{}\n{}".format(sltn[0], sltn[1]))
         print("With a score of {}.".format(sltn[2]))
-        print("The algorithm needed {}s to align".format(time.time() - start_time))
+        print("The algorithm needed {} s to align".format(time.time() - start_time))
         print("Memory usage: current = {} bytes, peak = {} bytes".format(current, peak))
         tracemalloc.reset_peak()
 
     elif mode == 2:
         tracemalloc.start()
         start_time = time.time()
-        sltn = nw.nw_woTable(x, y)
+        sltn = nw.nw_wo_table(x, y)
         current, peak = tracemalloc.get_traced_memory()
-        print("A possible optimal global alignment using NW without table is:\n{}\n{}".format(sltn[0], sltn[1]))
-        print("With a score of {}.".format(sltn[2]))
-        print("The algorithm needed {}s to align".format(time.time() - start_time))
+        #print("A possible optimal global alignment using NW without table is:\n{}\n{}".format(sltn[0], sltn[1]))
+        print("With a score of {}.".format(sltn))
+        print("The algorithm needed {} s to align".format(time.time() - start_time))
         print("Memory usage: current = {} bytes, peak = {} bytes".format(current, peak))
         tracemalloc.reset_peak()
 
@@ -80,19 +80,19 @@ else:
     """run calculation without statistics"""
     if mode == 0:
         sltn = nw.nw_basic(x, y)
-        print("A possible optimal global alignment of {} vs. {} is:\n{}\n{}"
+        print("The optimal global alignment of {} vs. {} is:\n{}\n{}"
               .format(data[0][0], data[1][0], sltn[0], sltn[1]))
         print("With a score of {}.".format(sltn[2]))
 
     elif mode == 1:
         sltn = nw.nw_hirschberg(x, y)
-        print("A possible optimal global alignment using the Hirschberg algorithm is:\n{]\n{}".format(sltn[0], sltn[1]))
+        print("The optimal global alignment using the Hirschberg algorithm is:\n{}\n{}".format(sltn[0], sltn[1]))
         print("With a score of {}.".format(sltn[2]))
 
     elif mode == 2:
-        sltn = nw.nw_woTable(x, y)
-        print("A possible optimal global alignment using NW without table is:\n{}\n{}".format(sltn[0], sltn[1]))
-        print("With a score of {}.".format(sltn[2]))
+        sltn = nw.nw_wo_table(x, y)
+        #print("A possible optimal global alignment using NW without table is:\n{}\n{}".format(sltn[0], sltn[1]))
+        print("With a score of {}.".format(sltn))
 
     else:
         print("No viable mode. Mode must be either 0, 1 or 2")

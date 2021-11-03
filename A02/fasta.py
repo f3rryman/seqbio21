@@ -1,4 +1,6 @@
-""" read file """
+""" FastA file handler
+    :functions: read(path)"""
+
 def read(path):
     """reads in fasta file"""
     heads = []

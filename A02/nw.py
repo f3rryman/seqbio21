@@ -1,6 +1,7 @@
 import numpy as np
 
-def is_match(c1, c2, match, mismatch):
+"""Task 01"""
+def is_match(c1, c2, match=1, mismatch=-1):
     """Get either match or mismatch value after comparing two chars"""
     if c1 == c2:
         return match
@@ -28,9 +29,9 @@ def nw_basic(x, y, match=1, mismatch=-1, gap=1):
     score = np.zeros(3)
     for i in range(n):
         for j in range(m):
-            score[0] = f[i, j] + is_match(x[i], y[j], match, mismatch)
-            score[1] = f[i, j+1] - gap
-            score[2] = f[i+1, j] - gap
+            score[0] = f[i, j] + is_match(x[i], y[j], match, mismatch) # upper left -> match or mismatch
+            score[1] = f[i, j+1] - gap # gap y
+            score[2] = f[i+1, j] - gap # gap x
             maximum = np.max(score)
             f[i+1, j+1] = maximum
 
@@ -79,50 +80,78 @@ def nw_basic(x, y, match=1, mismatch=-1, gap=1):
 
     return (seqX, seqY, f[n][m])
 
-
-def hirschberg_score(x, y):
-    pass
-
-
-def nw_hirschberg(x, y, match=1, mismatch=-1, gap=1):
-    # https://en.wikipedia.org/wiki/Hirschberg%27s_algorithm
-    seqX = ""
-    seqY = ""
-    if len(x) == 0:
-        for i in range(len(y)):
-            seqX += '-'
-            seqY += y[i]
-    elif len(y) == 0:
-        for i in range(len(x)):
-            seqX += x[i]
-            seqY += '-'
-    elif len(x) == 1 or len(y) == 1:
-        (seqX, seqY, s) = nw_basic(x, y)
-    else:
-        xlen = len(x)
-        xmid = len(x)/2
-        ylen = len(y)
-
-        scoreL = hirschberg_score(x[0:xmid], y)
-        scoreR = hirschberg_score(x[xmid+1:xlen], y[::-1])
-        ymid = np.argmax(scoreL + scoreR[::-1])
-
-        (seqX, seqY) = nw_hirschberg(x[0:xmid], y[0:ymid]) + nw_hirschberg(x[xmid+1:xlen], y[ymid+1:ylen])
-    return (seqX, seqY)
-
-
-def computeF(i, j):
-    if (i == 0) and (j == 0):
-        return 0
-    elif i == 0:
-        return -j*1
-    elif j == 0:
-        return -i*1
-    else:
-        return np.max(computeF(i - 1, j - 1) + 1,
-                      computeF(i - 1, j) - 1,
-                      computeF(i, j - 1) - 1)
-
-
-def nw_woTable(x, y, match=1, mismatch=-1, gap=1):
+"""Task 02"""
+def halved_score(x, y, match_score = 1, mismatch_score = -1, gap_penalty = 1):
+    """calculates partly scores of the matrix"""
     n, m = len(x), len(y)
+    mat = []
+    # init matrix
+    for i in range(n+1):
+        mat.append([0]*(m+1))
+    # Initialization
+    for j in range(m+1):
+        mat[0][j] = -gap_penalty*j
+    for i in range(1, n+1):
+        mat[i][0] = -gap_penalty*i
+        # Recursion
+        for j in range(1, m+1):
+            if x[n-i] == y[m-j]:
+                mat[i][j] = max(mat[i-1][j-1] + match_score,
+                            mat[i-1][j] - gap_penalty,
+                            mat[i][j-1] - gap_penalty)
+            else:
+                mat[i][j] = max(mat[i - 1][j - 1] + mismatch_score,
+                                mat[i - 1][j] - gap_penalty,
+                                mat[i][j - 1] - gap_penalty)
+        # Now clear row from memory.
+        mat[i-1] = []
+    return mat[n]
+
+
+def nw_linear_space(x, y):
+    """Needleman-Wunsch algorithm using only linear space, also called the Hirschberg algorithm"""
+    # This is the main Hirschberg routine.
+    n, m = len(x), len(y)
+    if n<2 or m<2:
+        # In this case we just use the N-W algorithm.
+        return nw_basic(x, y)
+    else:
+        # Make partitions, call subroutines.
+        nr = int(np.round(n/2, 0))
+        F, B = halved_score(x[:nr], y), halved_score(x[nr:], y)
+        partition = [F[j] + B[m-j] for j in range(m+1)]
+        cut = partition.index(max(partition))
+        print(cut)
+        # Clear all memory now, so that we don't store data during recursive calls.
+        F, B, partition = [], [], []
+        # Now make recursive calls.
+        call_left = nw_linear_space(x[0:nr], y[0:cut])
+        call_right = nw_linear_space(x[nr:], y[cut:])
+        # Return result in format: [1st alignment, 2nd alignment, similarity]
+        return [call_left[r] + call_right[r] for r in range(3)]
+
+gap_penalty = 1
+
+"""Task 03"""
+def computeF (i, j, c1, c2):
+    """calculates an entry of F recursively"""
+    if i==0 and j==0:
+        return 0
+    elif i==0:
+        return -j*gap_penalty
+    elif j==0:
+        return -i*gap_penalty
+    else:
+        return max(computeF(i-1, j-1, c1, c2) + is_match(c1,c2),
+                   computeF(i-1, j, c1, c2) - gap_penalty,
+                   computeF(i, j-1, c1, c2) - gap_penalty)
+
+def nw_wo_table(x, y):
+    """calculates all entries in a matrix for an optimal global alignment recursively
+    :returns the score"""
+    n, m = len(x), len(y)
+    # Initialization
+    for i in range(n):
+        for j in range(m):
+            s = computeF(i, j, x[i], y[j])
+    return s
